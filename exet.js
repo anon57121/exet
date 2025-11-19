@@ -7651,7 +7651,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkLexicon() {
       attemptCount++;
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-      const buildVersion = '2025-11-19-2032'; // Update this when making changes
+      const buildVersion =  '2025-11-19-2050'; // Update this when making changes
       
       // Update loading message with progress
       if (xetLoading) {
