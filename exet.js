@@ -7642,8 +7642,70 @@ let exet;
 document.addEventListener('DOMContentLoaded', () => {
   const xetLoading = document.getElementById('xet-loading');
   
+  // Function to wait for lexicon to load
+  function waitForLexicon() {
+    const startTime = Date.now();
+    const maxWaitTime = 30000; // 30 seconds
+    let attemptCount = 0;
+    
+    function checkLexicon() {
+      attemptCount++;
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      
+      // Update loading message with progress
+      if (xetLoading) {
+        xetLoading.innerHTML = '<div style="text-align:center;font-family:monospace;padding-top:100px">' +
+          '<h3><span class="xet-blue">Exet: A web app for crossword construction</span></h3>' +
+          '<h4>Loading the lexicon. This may take a few seconds, please wait...</h4>' +
+          '<p style="color:#666;">Elapsed: ' + elapsed + 's (attempt ' + attemptCount + ')</p>' +
+          '</div>';
+      }
+      
+      if (typeof exetLexicon !== 'undefined') {
+        // Lexicon loaded successfully!
+        initializeExet();
+      } else if (Date.now() - startTime < maxWaitTime) {
+        // Keep waiting
+        setTimeout(checkLexicon, 1000); // Check every second
+      } else {
+        // Timeout - lexicon failed to load
+        if (xetLoading) {
+          xetLoading.innerHTML = '<div style="text-align:left;font-family:monospace;padding:20px;max-width:800px;margin:0 auto;">' +
+            '<h3 style="color:#d00;">⚠️ Failed to load the lexicon</h3>' +
+            '<p>The lexicon file (lufz-en-lexicon.js) failed to load within 30 seconds.</p>' +
+            '<p><strong>Possible causes:</strong></p>' +
+            '<ul>' +
+            '<li><strong>Out of memory:</strong> The lexicon file is large and your device may not have enough available memory</li>' +
+            '<li><strong>Slow connection:</strong> The file is still downloading</li>' +
+            '<li><strong>Script error:</strong> An error occurred while parsing the lexicon</li>' +
+            '</ul>' +
+            '<div style="background:#f9f9f9;padding:10px;margin-top:20px;">' +
+            '<strong>Debug Info:</strong><br>' +
+            'User Agent: ' + navigator.userAgent + '<br>' +
+            'Platform: ' + navigator.platform + '<br>' +
+            'Memory: ' + (navigator.deviceMemory || 'N/A') + ' GB<br>' +
+            'Max Touch Points: ' + (navigator.maxTouchPoints || 'N/A') + '<br>' +
+            'Waited: ' + elapsed + ' seconds<br>' +
+            '</div>' +
+            '<p style="margin-top:20px;"><strong>Suggestions:</strong><br>' +
+            '• Check the browser console for error messages<br>' +
+            '• Try refreshing the page<br>' +
+            '• Close other apps to free up memory<br>' +
+            '• Try on a desktop browser if the issue persists</p>' +
+            '</div>';
+        }
+        throw new Error("Lexicon failed to load within 30 seconds. Device may be out of memory.");
+      }
+    }
+    
+    // Start checking
+    checkLexicon();
+  }
+  
+  // Function to initialize Exet after lexicon is loaded
+  function initializeExet() {
   try {
-    // Check if lexicon is loaded
+    // Check if lexicon is loaded (should always be true at this point)
     if (!exetLexicon) {
       xetLoading.innerHTML = '<div style="text-align:left;font-family:monospace;padding:20px;max-width:800px;margin:0 auto;">' +
         '<h3 style="color:#d00;">⚠️ Failed to load the lexicon</h3>' +
@@ -7742,4 +7804,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Re-throw to allow other error handlers to see it
     throw err;
   }
+  } // End of initializeExet function
+  
+  // Start waiting for lexicon to load
+  waitForLexicon();
 });
