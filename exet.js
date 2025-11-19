@@ -7638,15 +7638,31 @@ let exetModals;
 let exetState;
 let exet;
 
+
 document.addEventListener('DOMContentLoaded', () => {
   const xetLoading = document.getElementById('xet-loading');
-  if (!exetLexicon) {
-    xetLoading.innerHTML = '<div class="xet-red"><h3>Failed to load the lexicon :-(</h3></div>';
-    throw "No lexicon has been loaded!"
-  }
-  xetLoading.remove();
+  
+  try {
+    // Check if lexicon is loaded
+    if (!exetLexicon) {
+      xetLoading.innerHTML = '<div style="text-align:left;font-family:monospace;padding:20px;max-width:800px;margin:0 auto;">' +
+        '<h3 style="color:#d00;">⚠️ Failed to load the lexicon</h3>' +
+        '<p>The lexicon file (lufz-en-lexicon.js) failed to load or define the exetLexicon variable.</p>' +
+        '<p><strong>Possible causes:</strong></p>' +
+        '<ul>' +
+        '<li>Script file failed to download</li>' +
+        '<li>Out of memory error (especially on mobile devices)</li>' +
+        '<li>Script execution error</li>' +
+        '</ul>' +
+        '<p>Check the browser console for more details.</p>' +
+        '</div>';
+      throw new Error("No lexicon has been loaded! exetLexicon is undefined.");
+    }
+    
+    // Lexicon loaded, continue initialization
+    xetLoading.remove();
 
-  exetLexiconInit();
+    exetLexiconInit();
 
   exetRevManager = new ExetRevManager();
   exetModals = new ExetModals();
@@ -7690,4 +7706,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   exet.finishSetup()
+  } catch (err) {
+    // Display the error on the loading screen
+    console.error('Exet initialization error:', err);
+    
+    if (xetLoading) {
+      let errorMessage = err && err.message ? err.message : String(err);
+      let errorStack = err && err.stack ? err.stack : '';
+      
+      xetLoading.innerHTML = '<div style="text-align:left;font-family:monospace;padding:20px;max-width:900px;margin:0 auto;">' +
+        '<h3 style="color:#d00;">⚠️ Initialization Error</h3>' +
+        '<p>An error occurred while initializing Exet:</p>' +
+        '<div style="background:#f5f5f5;padding:10px;border-left:3px solid #d00;margin:10px 0;">' +
+        '<strong>Error:</strong> ' + errorMessage + '' +
+        '</div>' +
+        (errorStack ? '<details><summary style="cursor:pointer;color:#666;">Stack trace</summary>' +
+        '<pre style="overflow-x:auto;font-size:0.85em;margin-top:5px;">' + errorStack + '</pre></details>' : '') +
+        '<div style="background:#f9f9f9;padding:10px;margin-top:20px;">' +
+        '<strong>Debug Info:</strong><br>' +
+        'User Agent: ' + navigator.userAgent + '<br>' +
+        'Platform: ' + navigator.platform + '<br>' +
+        'Memory: ' + (navigator.deviceMemory || 'N/A') + ' GB<br>' +
+        'exetLexicon defined: ' + (typeof exetLexicon !== 'undefined') + '<br>' +
+        (typeof exetLexicon !== 'undefined' && exetLexicon && exetLexicon.lexicon ? 
+          'Lexicon entries: ' + (exetLexicon.lexicon.length || 'unknown') + '<br>' : '') +
+        '</div>' +
+        '<p style="margin-top:20px;"><strong>Suggestions:</strong><br>' +
+        '• Check the browser console for more details<br>' +
+        '• Try refreshing the page<br>' +
+        '• If using a mobile device, the lexicon may be too large for available memory</p>' +
+        '</div>';
+      xetLoading.style.display = 'block';
+    }
+    
+    // Re-throw to allow other error handlers to see it
+    throw err;
+  }
 });
