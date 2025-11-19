@@ -7651,6 +7651,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkLexicon() {
       attemptCount++;
       const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      const buildVersion = '2025-11-19-2032'; // Update this when making changes
       
       // Update loading message with progress
       if (xetLoading) {
@@ -7658,6 +7659,7 @@ document.addEventListener('DOMContentLoaded', () => {
           '<h3><span class="xet-blue">Exet: A web app for crossword construction</span></h3>' +
           '<h4>Loading the lexicon. This may take a few seconds, please wait...</h4>' +
           '<p style="color:#666;">Elapsed: ' + elapsed + 's (attempt ' + attemptCount + ')</p>' +
+          '<p style="font-size:0.8em;color:#999;margin-top:20px;">Build: ' + buildVersion + '</p>' +
           '</div>';
       }
       
@@ -7670,31 +7672,60 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         // Timeout - lexicon failed to load
         if (xetLoading) {
-          xetLoading.innerHTML = '<div style="text-align:left;font-family:monospace;padding:20px;max-width:800px;margin:0 auto;">' +
+          // Check if any errors were captured
+          let errorsHTML = '';
+          if (window.capturedLoadErrors && window.capturedLoadErrors.length > 0) {
+            errorsHTML = '<div style="background:#ffe;padding:15px;margin:20px 0;border-left:4px solid #f00;">' +
+              '<strong style="color:#d00;">⚠️ JavaScript Errors Detected:</strong><br><br>';
+            
+            for (let i = 0; i < Math.min(3, window.capturedLoadErrors.length); i++) {
+              const err = window.capturedLoadErrors[i];
+              errorsHTML += '<div style="margin-bottom:10px;padding:8px;background:white;">';
+              errorsHTML += '<strong>Error ' + (i+1) + ':</strong> ' + err.message + '<br>';
+              if (err.source) {
+                errorsHTML += '<small style="color:#666;">at ' + err.source + ':' + err.lineno + ':' + err.colno + '</small><br>';
+              }
+              if (err.stack) {
+                errorsHTML += '<details style="margin-top:5px;"><summary style="cursor:pointer;color:#666;">Stack trace</summary>';
+                errorsHTML += '<pre style="font-size:0.8em;overflow-x:auto;margin:5px 0;">' + err.stack + '</pre></details>';
+              }
+              errorsHTML += '</div>';
+            }
+            errorsHTML += '</div>';
+          } else {
+            errorsHTML = '<div style="background:#ffe;padding:15px;margin:20px 0;border-left:4px solid #fa0;">' +
+              '<strong>⚠️ No JavaScript errors logged</strong><br>' +
+              'The lexicon file may have failed silently due to <strong>out of memory</strong>. ' +
+              'This is common on iPad and mobile devices with the large lexicon file.' +
+              '</div>';
+          }
+          
+          xetLoading.innerHTML = '<div style="text-align:left;font-family:monospace;padding:20px;max-width:900px;margin:0 auto;">' +
             '<h3 style="color:#d00;">⚠️ Failed to load the lexicon</h3>' +
             '<p>The lexicon file (lufz-en-lexicon.js) failed to load within 30 seconds.</p>' +
-            '<p><strong>Possible causes:</strong></p>' +
+            errorsHTML +
+            '<p><strong>Most likely cause:</strong></p>' +
             '<ul>' +
-            '<li><strong>Out of memory:</strong> The lexicon file is large and your device may not have enough available memory</li>' +
-            '<li><strong>Slow connection:</strong> The file is still downloading</li>' +
-            '<li><strong>Script error:</strong> An error occurred while parsing the lexicon</li>' +
+            '<li><strong>Out of memory:</strong> The lexicon file is very large (~40MB) and your device doesn\'t have enough available RAM. This is the most common issue on iPad.</li>' +
             '</ul>' +
             '<div style="background:#f9f9f9;padding:10px;margin-top:20px;">' +
-            '<strong>Debug Info:</strong><br>' +
+            '<strong>Device Info:</strong><br>' +
             'User Agent: ' + navigator.userAgent + '<br>' +
             'Platform: ' + navigator.platform + '<br>' +
             'Memory: ' + (navigator.deviceMemory || 'N/A') + ' GB<br>' +
-            'Max Touch Points: ' + (navigator.maxTouchPoints || 'N/A') + '<br>' +
+            'Touch Device: ' + (navigator.maxTouchPoints > 0 ? 'Yes (' + navigator.maxTouchPoints + ' points)' : 'No') + '<br>' +
             'Waited: ' + elapsed + ' seconds<br>' +
+            'Build: 2025-11-19-2032<br>' +
             '</div>' +
-            '<p style="margin-top:20px;"><strong>Suggestions:</strong><br>' +
-            '• Check the browser console for error messages<br>' +
-            '• Try refreshing the page<br>' +
-            '• Close other apps to free up memory<br>' +
-            '• Try on a desktop browser if the issue persists</p>' +
+            '<p style="margin-top:20px;"><strong>What to try:</strong><br>' +
+            '• <strong>Close all other Safari tabs</strong> to free up memory<br>' +
+            '• Close other apps running on your iPad<br>' +
+            '• Restart Safari completely<br>' +
+            '• Try refreshing after closing other apps<br>' +
+            '• As a last resort, try on a desktop browser with more RAM</p>' +
             '</div>';
         }
-        throw new Error("Lexicon failed to load within 30 seconds. Device may be out of memory.");
+        throw new Error("Lexicon failed to load within 30 seconds - likely out of memory on iPad.");
       }
     }
     
